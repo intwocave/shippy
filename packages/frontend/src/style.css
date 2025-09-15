@@ -18,15 +18,17 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  /* 아래 3줄 삭제 또는 주석 처리 */
+  /* display: flex; */
+  /* place-items: center; */
+  /* min-width: 320px; */
   min-height: 100vh;
 }
 
@@ -46,9 +48,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -58,11 +62,14 @@ button:focus-visible {
   padding: 2em;
 }
 
+/* 아래 #app 스타일을 수정합니다. 
+  기존 내용을 삭제하고 비워두거나, 아래처럼 주석 처리합니다.
+*/
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  /* max-width: 1280px; */
+  /* margin: 0 auto; */
+  /* padding: 2rem; */
+  /* text-align: center; */
 }
 
 @media (prefers-color-scheme: light) {
@@ -70,9 +77,11 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import LoginModal from './LoginModal.vue'
-import SignupModal from './SignupModal.vue'
 
 // 인기 프로젝트 샘플 데이터
 const popularProjects = ref([
@@ -30,77 +28,20 @@ const popularProjects = ref([
     deadline: "2025-02-28"
   }
 ])
-
-// 모달 관련 함수들
-const openLoginModal = () => {
-  showLoginModal.value = true
-}
-
-const openSignupModal = () => {
-  showSignupModal.value = true
-}
-
-const closeLoginModal = () => {
-  showLoginModal.value = false
-}
-
-const closeSignupModal = () => {
-  showSignupModal.value = false
-}
-
-const switchToSignup = () => {
-  showLoginModal.value = false
-  showSignupModal.value = true
-}
-
-const switchToLogin = () => {
-  showSignupModal.value = false
-  showLoginModal.value = true
-}
 </script>
 
 <template>
   <div class="shippy-main">
-    <!-- 헤더 섹션 -->
     <header class="hero-section">
-      <!-- 네비게이션 바 -->
-      <nav class="navbar">
-        <div class="nav-content">
-          <div class="nav-left">
-            <div class="nav-logo">SHIPPY</div>
-            <div class="nav-menu">
-              <a href="#" class="nav-link">프로젝트</a>
-              <a href="#" class="nav-link">개발자</a>
-              <a href="#" class="nav-link">기업</a>
-              <a href="#" class="nav-link">도움말</a>
-            </div>
-          </div>
-          
-          <div class="nav-center">
-            <div class="search-box">
-              <input type="text" placeholder="프로젝트나 기술을 검색하세요..." class="search-input">
-              <button class="search-btn">🔍</button>
-            </div>
-          </div>
-          
-          <div class="nav-right">
-            <button class="btn-project-register">프로젝트 등록</button>
-            <button class="btn-login" @click="openLoginModal">로그인</button>
-            <button class="btn-signup" @click="openSignupModal">회원가입</button>
-          </div>
-        </div>
-      </nav>
-      
       <div class="hero-content">
         <h1 class="hero-title">SHIPPY</h1>
         <p class="hero-subtitle">프로젝트 팀원을 찾는 가장 쉬운 방법</p>
         <div class="hero-buttons">
-          <button class="btn-secondary">프로젝트 둘러보기</button>
+          <router-link to="/projects" class="btn-secondary">프로젝트 둘러보기</router-link>
         </div>
       </div>
     </header>
 
-    <!-- 프로젝트 섹션 -->
     <section class="projects-section">
       <div class="container">
         <h2 class="section-title">인기 프로젝트</h2>
@@ -131,7 +72,6 @@ const switchToLogin = () => {
       </div>
     </section>
 
-    <!-- 카테고리 섹션 -->
     <section class="categories-section">
       <div class="container">
         <h2 class="section-title">카테고리</h2>
@@ -155,19 +95,6 @@ const switchToLogin = () => {
         </div>
       </div>
     </section>
-
-    <!-- 모달 컴포넌트들 -->
-    <LoginModal 
-      :isOpen="showLoginModal"
-      @close="closeLoginModal"
-      @switchToSignup="switchToSignup"
-    />
-    
-    <SignupModal 
-      :isOpen="showSignupModal"
-      @close="closeSignupModal"
-      @switchToLogin="switchToLogin"
-    />
   </div>
 </template>
 
@@ -186,155 +113,15 @@ const switchToLogin = () => {
   text-align: center;
   background: #ffffff;
   min-height: 100vh;
-  position: relative;
-}
-
-/* 네비게이션 바 */
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: 20px 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 2px solid #e0e0e0;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.nav-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-}
-
-.nav-left {
   display: flex;
   align-items: center;
-  gap: 2rem;
-}
-
-.nav-logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.nav-menu {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.nav-link {
-  color: #666;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.nav-link:hover {
-  color: #1a1a1a;
-}
-
-.nav-center {
-  flex: 1;
-  max-width: 400px;
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input {
-  width: 100%;
-  padding: 10px 40px 10px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  background: #f8f9fa;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #1a1a1a;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
-}
-
-.search-btn {
-  position: absolute;
-  right: 8px;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
-  transition: background 0.2s ease;
-}
-
-.search-btn:hover {
-  background: #f0f0f0;
-}
-
-.nav-right {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn-project-register, .btn-login, .btn-signup {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-project-register {
-  background: #1a1a1a;
-  color: white;
-}
-
-.btn-project-register:hover {
-  background: #333;
-}
-
-.btn-login {
-  background: transparent;
-  color: #1a1a1a;
-  border: 1px solid #e0e0e0;
-}
-
-.btn-login:hover {
-  background: #f5f5f5;
-}
-
-.btn-signup {
-  background: #1a1a1a;
-  color: white;
-}
-
-.btn-signup:hover {
-  background: #333;
+  justify-content: center;
 }
 
 .hero-content {
   max-width: 600px;
   margin: 0 auto;
-  padding: 120px 20px 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 0 20px; /* 패딩 조정 */
 }
 
 .hero-title {
@@ -368,6 +155,8 @@ const switchToLogin = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 160px;
+  text-decoration: none; /* router-link 스타일링 */
+  display: inline-block; /* router-link 스타일링 */
 }
 
 .btn-primary {
@@ -520,86 +309,5 @@ const switchToLogin = () => {
 .category-card p {
   color: #666;
   font-size: 0.9rem;
-}
-
-/* 반응형 */
-@media (max-width: 1024px) {
-  .nav-menu {
-    display: none;
-  }
-  
-  .nav-center {
-    max-width: 300px;
-  }
-}
-
-@media (max-width: 768px) {
-  .nav-content {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 15px 20px;
-  }
-  
-  .nav-left {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .nav-center {
-    width: 100%;
-    max-width: none;
-  }
-  
-  .nav-right {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .hero-title {
-    font-size: 2.5rem;
-  }
-  
-  .hero-section {
-    padding: 60px 20px;
-  }
-  
-  .hero-buttons {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .btn-primary, .btn-secondary {
-    width: 100%;
-    max-width: 280px;
-  }
-  
-  .projects-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .category-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .nav-content {
-    padding: 10px 15px;
-  }
-  
-  .nav-logo {
-    font-size: 1.3rem;
-  }
-  
-  .search-input {
-    font-size: 0.8rem;
-    padding: 8px 35px 8px 12px;
-  }
-  
-  .btn-login, .btn-signup {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-  }
 }
 </style>
