@@ -32,8 +32,12 @@
 
         <div v-if="activeTab === 'chat'" class="tab-content chat-content">
             <div class="message-list" ref="messageListRef">
-              <div v-for="(msg, index) in messages" :key="index" :class="['message-item', { 'my-message': msg.sender === userName }]">
-                <strong>{{ msg.sender }}:</strong> {{ msg.content }}
+              <div v-for="msg in messages" :key="msg.id" 
+                  :class="['message-item', { 'my-message': msg.authorId === user?.id && !msg.isAIMessage, 'ai-message': msg.isAIMessage }]"
+              >
+                <strong class="message-author">{{ msg.author.name }}:</strong>
+                <div class="message-content" v-if="!msg.isAIMessage">{{ msg.content }}</div>
+                <div class="message-content" v-else v-html="md.render(msg.content)"></div>
               </div>
             </div>
 
@@ -120,27 +124,32 @@
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue';
 import { useAuth } from '../composables/useAuth';
 import axios from 'axios';
-import { io } from 'socket.io-client'; 
+import { io, Socket } from 'socket.io-client'; 
 import MarkdownIt from 'markdown-it'; 
 import { debounce } from 'lodash'; 
 
+// --- 타입 정의 ---
+interface ChatMessage {
+  id: string | number;
+  content: string;
+  author: { name: string };
+  authorId: string;
+  projectId: number;
+  createdAt: Date;
+  isAIMessage?: boolean;
+  isError?: boolean;
+}
+
 // --- 상태 관리 ---
 const { user, isAuthenticated } = useAuth();
-const userName = computed(() => {
-  const name = user.value?.name;
-  if (name && name.trim()) return name;
-  const email = user.value?.email;
-  const localPart = typeof email === 'string' ? email.split('@')[0] : '';
-  return localPart || '익명';
-});
 
 const teams = ref<any[]>([]);
 const loadingTeams = ref(true);
 const selectedProjectId = ref<number | null>(null);
 
-const messages = ref<Array<{ content: string; sender: string }>>([]);
+const messages = ref<ChatMessage[]>([]);
 const inputMessage = ref('');
-const socket = io('http://localhost:3000'); 
+let socket: Socket;
 const messageListRef = ref<HTMLDivElement | null>(null);
 
 // 탭 상태
@@ -249,13 +258,10 @@ const fetchNote = async (projectId: number) => {
 const fetchMessages = async (projectId: number) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`/api/projects/${projectId}/messages`, {
+        const response = await axios.get<ChatMessage[]>(`/api/projects/${projectId}/messages`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        messages.value = response.data.map((msg: any) => ({
-            content: msg.content,
-            sender: msg.author.name || msg.author.email.split('@')[0],
-        }));
+        messages.value = response.data;
         scrollToBottom();
     } catch (error) {
         console.error('채팅 기록 불러오기 실패:', error);
@@ -264,7 +270,7 @@ const fetchMessages = async (projectId: number) => {
 
 const joinRooms = (projectId: number) => {
     if (socket.connected) {
-        socket.emit('chat:join', String(projectId)); 
+        socket.emit('join_room', String(projectId));
         socket.emit('note:join', String(projectId)); 
     }
 };
@@ -272,6 +278,10 @@ const joinRooms = (projectId: number) => {
 const selectTeam = (projectId: number) => {
     if (selectedProjectId.value !== projectId) {
         stopWebRTC(); 
+
+        if(selectedProjectId.value) {
+            socket.emit('leave_room', String(selectedProjectId.value));
+        }
 
         messages.value = []; 
         selectedProjectId.value = projectId;
@@ -368,17 +378,45 @@ const formatText = (style: 'bold' | 'italic' | 'heading' | 'link' | 'list') => {
 
 
 const sendMessage = () => {
+  const message = inputMessage.value.trim();
   const projectId = selectedProjectId.value;
-  if (inputMessage.value.trim() && projectId) {
-    const payload = {
-      roomId: String(projectId),
-      message: inputMessage.value,
-      sender: userName.value,
-    };
 
-    socket.emit('chat:send', payload); 
-    inputMessage.value = '';
+  if (!message || !projectId || !user.value) return;
+
+  if (message.startsWith('/')) {
+    const [command, ...args] = message.substring(1).split(' ');
+    const text = args.join(' ');
+
+    if (command === '요약' || command === 'summarize') {
+      socket.emit('ai_command', { command: 'summarize', projectId: String(projectId) });
+    } else if ((command === '프롬프트' || command === 'prompt') && text) {
+      socket.emit('ai_command', { command: 'prompt', projectId: String(projectId), text });
+    } else {
+      // 유효하지 않은 명령어 처리 (예: 에러 메시지 표시)
+      console.warn('Invalid AI command:', command);
+      const errorMsg: ChatMessage = {
+        id: `err-${Date.now()}`,
+        content: `'/${command}'는 유효하지 않은 명령어입니다. 사용법: /요약 또는 /프롬프트 [질문]`,
+        author: { name: 'System' },
+        authorId: 'system',
+        projectId,
+        createdAt: new Date(),
+        isAIMessage: true,
+        isError: true,
+      };
+      messages.value.push(errorMsg);
+      scrollToBottom();
+    }
+  } else {
+    const payload = {
+      content: message,
+      authorId: user.value.id,
+      projectId: projectId,
+    };
+    socket.emit('chat_message', payload);
   }
+
+  inputMessage.value = '';
 };
 
 // 탭 전환 핸들러 (WebRTC 종료 로직 포함)
@@ -782,12 +820,8 @@ const registerWebRTCHandlers = () => {
     });
 };
 
-
-// --- 생명주기 훅 ---
-onMounted(() => {
-  fetchTeams();
-  scrollToBottom();
-  registerWebRTCHandlers(); 
+const initializeSocket = () => {
+  socket = io('http://localhost:3000');
 
   socket.on('connect', () => {
     console.log('Socket.IO 연결 성공!');
@@ -800,23 +834,11 @@ onMounted(() => {
       console.log('Socket.IO 연결 해제됨.');
       stopWebRTC();
   });
-  
-  // 채팅 메시지 수신
-  socket.on('chat:message', (payload) => {
-    if (payload.roomId === String(selectedProjectId.value)) {
-        messages.value.push({ content: payload.message, sender: payload.sender });
-        scrollToBottom();
-    }
-  });
 
-  // 사용자 접속 알림
-  socket.on('user:joined', (payload) => {
-    if (payload.roomId === String(selectedProjectId.value)) {
-        messages.value.push({
-            content: `[시스템] ${payload.userId} 님이 채팅방에 접속했습니다.`,
-            sender: '시스템',
-        });
-        scrollToBottom();
+  socket.on('new_message', (message: ChatMessage) => {
+    if (message.projectId === selectedProjectId.value) {
+      messages.value.push(message);
+      scrollToBottom();
     }
   });
 
@@ -826,10 +848,23 @@ onMounted(() => {
         noteContent.value = payload.content;
     }
   });
+
+  registerWebRTCHandlers();
+}
+
+
+// --- 생명주기 훅 ---
+onMounted(() => {
+  fetchTeams();
+  initializeSocket();
+  scrollToBottom();
 });
 
 onUnmounted(() => { 
     stopWebRTC();
+    if (socket) {
+      socket.disconnect();
+    }
 })
 </script>
 
@@ -983,11 +1018,12 @@ onUnmounted(() => {
   word-wrap: break-word;
   line-height: 1.4;
   font-size: 0.95rem;
+  display: flex; /* Flexbox 레이아웃 */
+  gap: 8px; /* 이름과 내용 사이 간격 */
 }
 
-.message-item strong {
+.message-author {
     font-weight: bold;
-    margin-right: 5px;
 }
 
 .message-item:not(.my-message) {
@@ -1002,8 +1038,35 @@ onUnmounted(() => {
   color: white;
 }
 
-.my-message strong {
+.my-message .message-author {
     color: white;
+}
+
+.message-content {
+    text-align: start;
+}
+
+.ai-message {
+  align-self: flex-start;
+  background-color: #f0f9ff; /* AI 메시지 배경색 */
+  border-left: 4px solid #1a73e8; /* AI 메시지 강조선 */
+  max-width: 85%;
+}
+
+.ai-message .message-author {
+  color: #0d47a1; /* AI Assistant 이름 색상 */
+}
+
+.ai-message :deep(p) {
+  margin: 0;
+}
+
+.ai-message :deep(pre) {
+  background-color: #e2e8f0;
+  padding: 10px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 /* 입력 영역 */

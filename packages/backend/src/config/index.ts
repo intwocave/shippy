@@ -26,6 +26,10 @@ const config = {
   
   // Prisma가 PostgreSQL 데이터베이스에 연결할 때 사용할 주소
   databaseUrl: process.env.DATABASE_URL,
+  llm: {
+    apiUrl: process.env.LLM_API_URL || 'http://localhost:11434/v1/chat/completions',
+    model: process.env.LLM_MODEL_NAME || 'gemma:2b',
+  },
 };
 
 export default config;

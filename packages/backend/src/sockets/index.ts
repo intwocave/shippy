@@ -2,7 +2,7 @@
 
 import { Server, Socket } from 'socket.io';
 import http from 'http';
-import chatHandler from './chat.handler.js';
+import { chatHandler } from './chat.handler.js';
 import webrtcHandler from './webrtc.handler.js';
 import noteHandler from './note.handler.js';
 import logger from '../utils/logger.js';
