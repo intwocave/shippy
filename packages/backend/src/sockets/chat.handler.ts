@@ -56,8 +56,8 @@ export const chatHandler = (io: Server, socket: Socket) => {
     }
   };
 
-  const handleAiCommand = async (data: { command: string; projectId: string; text?: string }) => {
-    const { command, projectId, text } = data;
+  const handleAiCommand = async (data: { command: string; projectId: string; text?: string; tempId?: string; }) => {
+    const { command, projectId, text, tempId } = data;
     logger.info(`AI command '${command}' received for project ${projectId}`);
 
     try {
@@ -82,7 +82,8 @@ export const chatHandler = (io: Server, socket: Socket) => {
         author: { name: 'AI Assistant' },
         authorId: 'ai-assistant',
         projectId: Number(projectId),
-        isAIMessage: true // AI 메시지임을 구분하기 위한 플래그
+        isAIMessage: true, // AI 메시지임을 구분하기 위한 플래그
+        tempId,
       };
 
       io.to(projectId).emit('new_message', aiMessage);
@@ -98,7 +99,8 @@ export const chatHandler = (io: Server, socket: Socket) => {
         authorId: 'ai-assistant',
         projectId: Number(projectId),
         isAIMessage: true,
-        isError: true
+        isError: true,
+        tempId,
       };
       socket.emit('new_message', errorMessage); // 에러는 요청한 사용자에게만 보냄
     }

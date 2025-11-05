@@ -138,6 +138,7 @@ interface ChatMessage {
   createdAt: Date;
   isAIMessage?: boolean;
   isError?: boolean;
+  tempId?: string;
 }
 
 // --- 상태 관리 ---
@@ -386,11 +387,24 @@ const sendMessage = () => {
   if (message.startsWith('/')) {
     const [command, ...args] = message.substring(1).split(' ');
     const text = args.join(' ');
+    const tempId = `ai-thinking-${Date.now()}`;
+
+    const thinkingMessage: ChatMessage = {
+      id: tempId,
+      content: 'AI가 답변을 생성 중입니다...',
+      author: { name: 'AI Assistant' },
+      authorId: 'ai-assistant',
+      projectId,
+      createdAt: new Date(),
+      isAIMessage: true,
+    };
+    messages.value.push(thinkingMessage);
+    scrollToBottom();
 
     if (command === '요약' || command === 'summarize') {
-      socket.emit('ai_command', { command: 'summarize', projectId: String(projectId) });
+      socket.emit('ai_command', { command: 'summarize', projectId: String(projectId), tempId });
     } else if ((command === '프롬프트' || command === 'prompt') && text) {
-      socket.emit('ai_command', { command: 'prompt', projectId: String(projectId), text });
+      socket.emit('ai_command', { command: 'prompt', projectId: String(projectId), text, tempId });
     } else {
       // 유효하지 않은 명령어 처리 (예: 에러 메시지 표시)
       console.warn('Invalid AI command:', command);
@@ -836,10 +850,18 @@ const initializeSocket = () => {
   });
 
   socket.on('new_message', (message: ChatMessage) => {
-    if (message.projectId === selectedProjectId.value) {
-      messages.value.push(message);
-      scrollToBottom();
+    if (message.projectId !== selectedProjectId.value) return;
+
+    if (message.tempId) {
+      const index = messages.value.findIndex(m => m.id === message.tempId);
+      if (index !== -1) {
+        messages.value[index] = message;
+        return;
+      }
     }
+    
+    messages.value.push(message);
+    scrollToBottom();
   });
 
   // 노트 내용 실시간 업데이트 수신
