@@ -8,16 +8,17 @@ generator client {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  name      String?
-  password  String
-  personality String?
-  status      String?
-  projects  Project[] @relation("OwnerProjects")
-  applications Application[]
-  comments     Comment[]
-  chatMessages ChatMessage[]
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  name            String
+  password        String
+  bio             String?  @db.Text
+  personality     String?
+  status          String?
+  projects        Project[] @relation("OwnerProjects")
+  applications    Application[]
+  comments        Comment[]
+  chatMessages    ChatMessage[]
 }
 
 model Project {

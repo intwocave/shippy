@@ -73,3 +73,18 @@ export const updateUserStatus = async (userId: number, status: string): Promise<
   const { password, ...userWithoutPassword } = updatedUser;
   return userWithoutPassword;
 };
+
+/**
+ * 사용자의 자기소개 정보를 업데이트합니다.
+ * @param {number} userId - 사용자 ID
+ * @param {string} bio - 새로운 자기소개 정보
+ * @returns {Promise<Omit<User, 'password'> | null>}
+ */
+export const updateUserBio = async (userId: number, bio: string): Promise<Omit<User, 'password'> | null> => {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { bio },
+  });
+  const { password, ...userWithoutPassword } = updatedUser;
+  return userWithoutPassword;
+};

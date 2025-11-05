@@ -16,6 +16,9 @@ router.put('/me/personality', ensureAuthenticated, userController.updateMyPerson
 // '/api/users/me/status' - 현재 로그인된 사용자의 상태 정보 업데이트하기 (인증 필요)
 router.put('/me/status', ensureAuthenticated, userController.updateMyStatus);
 
+// '/api/users/me/bio' - 현재 로그인된 사용자의 자기소개 정보 업데이트하기 (인증 필요)
+router.put('/me/bio', ensureAuthenticated, userController.updateMyBio);
+
 // '/api/users/:userId' - 특정 사용자 정보 가져오기
 router.get('/:userId', userController.getUserById);
 

@@ -38,6 +38,18 @@
           <button @click="cancelEditingStatus">취소</button>
         </div>
       </div>
+      <div class="profile-item bio-item">
+        <label>자기소개:</label>
+        <div v-if="!isEditingBio">
+          <span class="bio-text">{{ user.bio || '아직 등록되지 않았습니다.' }}</span>
+          <button @click="startEditingBio">수정</button>
+        </div>
+        <div v-else>
+          <textarea v-model="editableBio" placeholder="자기소개를 입력하세요"></textarea>
+          <button @click="saveBio">저장</button>
+          <button @click="cancelEditingBio">취소</button>
+        </div>
+      </div>
     </div>
     <div v-else>
       <p>프로필 정보를 불러오는 중...</p>
@@ -58,10 +70,14 @@ const editablePersonality = ref('');
 const isEditingStatus = ref(false);
 const editableStatus = ref('');
 
+const isEditingBio = ref(false);
+const editableBio = ref('');
+
 watch(user, (newUser) => {
   if (newUser) {
     editablePersonality.value = newUser.personality || '';
     editableStatus.value = newUser.status || '오프라인';
+    editableBio.value = newUser.bio || '';
   }
 }, { immediate: true });
 
@@ -123,6 +139,35 @@ const saveStatus = async () => {
   }
 };
 
+const startEditingBio = () => {
+  isEditingBio.value = true;
+};
+
+const cancelEditingBio = () => {
+  isEditingBio.value = false;
+  editableBio.value = user.value.bio || '';
+};
+
+const saveBio = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.put('/api/users/me/bio', 
+      { bio: editableBio.value }, 
+      { headers: { Authorization: `Bearer ${token}` } 
+    });
+    
+    if (user.value) {
+        user.value.bio = response.data.bio;
+    }
+
+    isEditingBio.value = false;
+    alert('자기소개가 성공적으로 업데이트되었습니다.');
+  } catch (error) {
+    console.error('자기소개 업데이트 실패:', error);
+    alert('자기소개 업데이트에 실패했습니다.');
+  }
+};
+
 </script>
 
 <style scoped>
@@ -173,7 +218,8 @@ h1 {
 }
 
 .profile-item input,
-.profile-item select {
+.profile-item select,
+.profile-item textarea {
   flex-grow: 1;
   padding: 0.4rem;
   border: 1px solid #ccc;
@@ -181,6 +227,21 @@ h1 {
   background-color: #fff;
   color: #333;
 }
+
+.bio-item {
+  align-items: flex-start; /* 상단 정렬 */
+}
+
+.bio-text {
+  white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
+  line-height: 1.5;
+}
+
+textarea {
+  height: 100px; /* 높이 조절 */
+  resize: vertical; /* 수직으로만 크기 조절 가능 */
+}
+
 
 /* Stile per i pulsanti Salva e Annulla */
 .profile-item > div > button {

@@ -94,3 +94,20 @@ export const updateMyStatus = async (req: Request, res: Response, next: NextFunc
         next(error);
     }
 };
+
+/**
+ * 현재 로그인한 사용자의 자기소개 정보 업데이트하기
+ */
+export const updateMyBio = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user as User;
+        if (!user) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required');
+        }
+        const { bio } = req.body;
+        const updatedUser = await userService.updateUserBio(user.id, bio);
+        res.status(httpStatus.OK).json(updatedUser);
+    } catch (error) {
+        next(error);
+    }
+};
