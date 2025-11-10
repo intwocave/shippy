@@ -7,6 +7,7 @@ import MyApplications from '../pages/MyApplications.vue' // 추가
 import Profile from '../pages/Profile.vue'
 import UserProfile from '../pages/UserProfile.vue'
 import TeamRoom from '../pages/TeamRoom.vue'
+import Recommend from '../pages/Recommend.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -20,7 +21,9 @@ const routes = [
     path: '/team-room', // 팀룸
     component: TeamRoom,
     meta: { fullWidth: true }
-  }
+  },
+  { path: '/recommend',
+    component: Recommend },
 ]
 
 export const router = createRouter({

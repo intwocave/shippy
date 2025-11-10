@@ -38,6 +38,15 @@
           <button @click="cancelEditingStatus">취소</button>
         </div>
       </div>
+      <div class="profile-item skill-item">
+        <label>기술 스택 (AI 추출):</label>
+        <div v-if="parsedSkills.length > 0" class="skill-list">
+          <span v-for="skill in parsedSkills" :key="skill" class="skill-tag">
+            {{ skill }}
+          </span>
+        </div>
+        <span v-else>자기소개 작성 후 저장하면 기술 스택이 추출됩니다.</span>
+      </div>
       <div class="profile-item bio-item">
         <label>자기소개:</label>
         <div v-if="!isEditingBio">
@@ -58,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useAuth } from '../composables/useAuth';
 import axios from 'axios';
 
@@ -72,6 +81,21 @@ const editableStatus = ref('');
 
 const isEditingBio = ref(false);
 const editableBio = ref('');
+
+const parsedSkills = computed(() => {
+  if (!user.value?.extractedSkills) return [];
+  
+  try {
+    // JSON 문자열을 객체로 파싱합니다.
+    const skillsObject = JSON.parse(user.value.extractedSkills);
+    // [ "기술명: 점수", ... ] 형태의 배열로 변환합니다.
+    return Object.entries(skillsObject)
+      .map(([skill, score]) => `${skill}: ${Number(score).toFixed(1)}`);
+  } catch (e) {
+    console.error("Failed to parse extracted skills JSON:", e);
+    return [];
+  }
+});
 
 watch(user, (newUser) => {
   if (newUser) {
@@ -259,6 +283,27 @@ textarea {
 
 .profile-item > div > button:last-of-type {
     background-color: #6c757d; /* Grigio per Annulla */
+}
+
+.skill-item {
+  align-items: flex-start;
+}
+
+.skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.skill-tag {
+  background-color: #e0f7fa; /* 연한 하늘색 배경 */
+  color: #00796b; /* 진한 녹색 텍스트 */
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 </style>

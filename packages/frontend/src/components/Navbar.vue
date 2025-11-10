@@ -54,6 +54,7 @@ const handleLogout = () => {
         <div class="nav-menu">
           <router-link to="/projects" class="nav-link">프로젝트</router-link>
           <router-link v-if="isAuthenticated" to="/team-room" class="nav-link chat-link">팀룸</router-link>
+          <router-link v-if="isAuthenticated" to="/recommend" class="nav-link recommend-link">추천</router-link>
           </div>
       </div>
 

@@ -15,6 +15,7 @@ model User {
   bio             String?  @db.Text
   personality     String?
   status          String?
+  extractedSkills String?
   projects        Project[] @relation("OwnerProjects")
   applications    Application[]
   comments        Comment[]
