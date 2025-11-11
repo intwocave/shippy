@@ -11,7 +11,7 @@
             <span v-if="techStackFilter.length === 0" class="placeholder">기술 스택 선택</span>
             <span v-else>{{ techStackFilter.join(', ') }}</span>
           </div>
-          <div v-if="dropdowns.tech" class="dropdown">
+          <div v-if="dropdowns.tech" class="dropdown" @click.stop>
             <label v-for="tech in techOptions" :key="tech">
               <input type="checkbox" :value="tech" v-model="techStackFilter" />
               {{ tech }}
@@ -28,7 +28,7 @@
             <span v-if="positionsFilter.length === 0" class="placeholder">포지션 선택</span>
             <span v-else>{{ positionsFilter.join(', ') }}</span>
           </div>
-          <div v-if="dropdowns.pos" class="dropdown">
+          <div v-if="dropdowns.pos" class="dropdown" @click.stop>
             <label v-for="pos in positionOptions" :key="pos">
               <input type="checkbox" :value="pos" v-model="positionsFilter" />
               {{ pos }}
