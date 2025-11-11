@@ -1,7 +1,7 @@
 import { User, Application, Project, Prisma } from '@prisma/client';
 import prisma from '../config/prisma.js';
 import * as aiService from './ai.service.js';
-import logger from '../utils/logger.js'; // 💡 [추가] logger import
+import logger from '../utils/logger.js';
 
 /**
  * ID로 사용자를 조회합니다.
@@ -11,7 +11,6 @@ import logger from '../utils/logger.js'; // 💡 [추가] logger import
 export const getUserById = async (userId: number): Promise<Omit<User, 'password'> | null> => {
   const user = await prisma.user.findUnique({ 
     where: { id: userId },
-    // 💡 [수정] extractedSkills를 포함한 모든 필요한 필드를 선택합니다.
     select: {
       id: true,
       email: true,
@@ -19,30 +18,29 @@ export const getUserById = async (userId: number): Promise<Omit<User, 'password'
       bio: true,
       personality: true,
       status: true,
-      extractedSkills: true, 
+      extractedSkills: true,
       password: true,
     }
   });
+
   if (!user) {
     return null;
   }
-  // password 필드는 이미 select에서 제외되었으므로, 간단하게 타입 캐스팅합니다.
+  
   const { password, ...userWithoutPassword } = user;
-  return userWithoutPassword as Omit<User, 'password'>;
+  return userWithoutPassword as Omit<User, 'password'>; 
 };
 
 /**
- * 사용자가 지원한 프로젝트 목록을 조회합니다.
- * @param {number} userId - 사용자 ID
- * @returns {Promise<(Application & { project: Project })[]>}
+ * 사용자가 지원한 프로젝트 목록을 조회합니다. (기존 함수 유지)
  */
 export const getAppliedProjectsByUserId = async (userId: number): Promise<(Application & { project: Project & { owner: Omit<User, 'password'> } })[]> => {
   return prisma.application.findMany({
     where: { userId },
     include: {
-      project: { // 지원한 프로젝트 정보 포함
+      project: {
         include: {
-          owner: { // 프로젝트 소유자 정보 포함
+          owner: {
             select: {
               id: true,
               email: true,
@@ -55,16 +53,13 @@ export const getAppliedProjectsByUserId = async (userId: number): Promise<(Appli
       }
     },
     orderBy: {
-      createdAt: 'desc' // 최신 지원 순으로 정렬
+      createdAt: 'desc'
     }
   });
 };
 
 /**
- * 사용자의 성격 정보를 업데이트합니다.
- * @param {number} userId - 사용자 ID
- * @param {string} personality - 새로운 성격 정보
- * @returns {Promise<Omit<User, 'password'> | null>}
+ * 사용자의 성격 정보를 업데이트합니다. (기존 함수 유지)
  */
 export const updateUserPersonality = async (userId: number, personality: string): Promise<Omit<User, 'password'> | null> => {
   const updatedUser = await prisma.user.update({
@@ -76,10 +71,7 @@ export const updateUserPersonality = async (userId: number, personality: string)
 };
 
 /**
- * 사용자의 상태 정보를 업데이트합니다.
- * @param {number} userId - 사용자 ID
- * @param {string} status - 새로운 상태 정보
- * @returns {Promise<Omit<User, 'password'> | null>}
+ * 사용자의 상태 정보를 업데이트합니다. (기존 함수 유지)
  */
 export const updateUserStatus = async (userId: number, status: string): Promise<Omit<User, 'password'> | null> => {
   const updatedUser = await prisma.user.update({
@@ -92,19 +84,16 @@ export const updateUserStatus = async (userId: number, status: string): Promise<
 
 /**
  * 사용자의 자기소개 정보를 업데이트합니다.
- * @param {number} userId - 사용자 ID
- * @param {string} bio - 새로운 자기소개 정보
- * @returns {Promise<Omit<User, 'password'> | null>}
  */
 export const updateUserBio = async (userId: number, bio: string): Promise<Omit<User, 'password'> | null> => {
   let extractedSkills: string | null = null;
   
   try {
-    if (bio && bio.length > 10) { // 최소한의 길이 조건
+    if (bio && bio.length > 10) {
       extractedSkills = await aiService.extractSkillsFromBio(bio);
     }
   } catch (error) {
-    logger.error('Failed to extract skills from bio:', error); // 💡 [수정] logger 사용
+    logger.error('Failed to extract skills from bio:', error);
   }
 
   const updateData: Prisma.UserUpdateInput = { bio };
@@ -114,7 +103,7 @@ export const updateUserBio = async (userId: number, bio: string): Promise<Omit<U
   
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: updateData, // 💡 [수정] updateData 사용
+    data: updateData,
   });
   
   const { password, ...userWithoutPassword } = updatedUser;
@@ -122,21 +111,17 @@ export const updateUserBio = async (userId: number, bio: string): Promise<Omit<U
 };
 
 // ------------------------------------------------------------------
-// [추가] 추천 시스템 로직
+// 추천 시스템 로직 (코사인, 자카드, 유클리드)
 // ------------------------------------------------------------------
 
 /**
- * 코사인 유사도 계산 로직 (유저의 스킬 벡터와 프로젝트의 요구 스택 벡터 비교)
- * @param userSkills - { "기술명": 숙련도(1.0~5.0) }
- * @param projectStack - 프로젝트의 요구 기술 스택 배열 (e.g., ["React", "TypeScript"])
- * @returns {number} 0.0 에서 1.0 사이의 유사도 점수
+ * 코사인 유사도 계산 로직
+ * @returns {number} 0.0 에서 1.0 사이의 코사인 유사도 점수
  */
 function calculateCosineSimilarity(userSkills: Record<string, number>, projectStack: string[]): number {
     if (projectStack.length === 0) return 0;
 
     const projectSkills = projectStack.map(s => s.toLowerCase());
-    
-    // 유저의 추출된 스킬 목록과 프로젝트의 요구 스택을 모두 포함하는 집합 생성
     const uniqueSkills = Array.from(new Set([...Object.keys(userSkills), ...projectSkills]));
     
     let dotProduct = 0;
@@ -144,10 +129,7 @@ function calculateCosineSimilarity(userSkills: Record<string, number>, projectSt
     let projectVectorMagnitudeSq = 0;
 
     for (const skill of uniqueSkills) {
-        // 사용자 스킬 벡터: 추출된 숙련도 점수 (0.0 ~ 5.0)
         const userWeight = userSkills[skill] || 0;
-        
-        // 프로젝트 스택 벡터: 요구 스택에 포함되면 1, 아니면 0
         const projectWeight = projectSkills.includes(skill) ? 1 : 0;
         
         dotProduct += userWeight * projectWeight;
@@ -162,17 +144,73 @@ function calculateCosineSimilarity(userSkills: Record<string, number>, projectSt
         return 0;
     }
 
-    // 코사인 유사도 공식: (A · B) / (||A|| * ||B||)
     return dotProduct / (userMagnitude * projectMagnitude);
 }
 
 /**
- * 사용자에게 프로젝트를 추천합니다.
+ * 자카드 유사도 계산 로직
+ * @returns {number} 0.0 에서 1.0 사이의 자카드 유사도 점수
+ */
+function calculateJaccardSimilarity(userSkills: Record<string, number>, projectStack: string[]): number {
+    // 숙련도가 1.0 이상인 기술만 '아는 기술'로 인정
+    const userKnownSkills = new Set(
+        Object.keys(userSkills)
+            .filter(skill => userSkills[skill] >= 1.0) 
+            .map(s => s.toLowerCase())
+    );
+    const requiredSkills = new Set(projectStack.map(s => s.toLowerCase()));
+
+    if (requiredSkills.size === 0) return 0;
+
+    // 교집합 크기 계산
+    let intersectionSize = 0;
+    for (const requiredSkill of requiredSkills) {
+        if (userKnownSkills.has(requiredSkill)) {
+            intersectionSize++;
+        }
+    }
+
+    // 합집합 크기 계산: |A| + |B| - |A ∩ B|
+    const unionSize = userKnownSkills.size + requiredSkills.size - intersectionSize;
+
+    if (unionSize === 0) return 0;
+    
+    // 자카드 유사도 공식: |A ∩ B| / |A ∪ B|
+    return intersectionSize / unionSize;
+}
+
+/**
+ * 💡 [추가] 유클리드 유사도 계산 로직 (유클리드 거리의 역수 기반 유사도)
+ * @returns {number} 0.0 에서 1.0 사이의 유클리드 유사도 점수 (1/(1+거리))
+ */
+function calculateEuclideanSimilarity(userSkills: Record<string, number>, projectStack: string[]): number {
+    if (projectStack.length === 0) return 0;
+
+    const projectSkills = projectStack.map(s => s.toLowerCase());
+    const uniqueSkills = Array.from(new Set([...Object.keys(userSkills), ...projectSkills]));
+
+    let distanceSq = 0;
+
+    for (const skill of uniqueSkills) {
+        const userWeight = userSkills[skill] || 0;
+        const projectWeight = projectSkills.includes(skill) ? 1 : 0;
+        
+        distanceSq += Math.pow(userWeight - projectWeight, 2);
+    }
+
+    const distance = Math.sqrt(distanceSq);
+
+    // 유클리드 유사도 공식: 1 / (1 + 거리)
+    // 거리가 0에 가까울수록 (즉, 잘 맞을수록) 유사도 점수는 1에 가까워집니다.
+    return 1 / (1 + distance);
+}
+
+/**
+ * 사용자에게 프로젝트를 추천합니다. (세 가지 유사도 점수 포함)
  * @param {number} userId - 사용자 ID
- * @returns {Promise<any[]>} 추천 프로젝트 목록 (점수 포함)
+ * @returns {Promise<any[]>} 추천 프로젝트 목록 (다중 점수 포함)
  */
 export const getRecommendedProjects = async (userId: number): Promise<any[]> => {
-    // 💡 [수정] getUserById를 사용하여 extractedSkills가 포함된 사용자 정보를 가져옵니다.
     const user = await getUserById(userId); 
     
     if (!user || !user.extractedSkills) {
@@ -187,7 +225,6 @@ export const getRecommendedProjects = async (userId: number): Promise<any[]> => 
         return [];
     }
     
-    // 1. 모든 프로젝트를 가져옵니다.
     const allProjects = await prisma.project.findMany({
         include: { 
             owner: { 
@@ -202,19 +239,22 @@ export const getRecommendedProjects = async (userId: number): Promise<any[]> => 
         },
     });
 
-    const recommendations = (allProjects as (Project & { owner: Omit<User, 'password'>, recommendationScore?: number })[])
+    const recommendations = (allProjects as (Project & { owner: Omit<User, 'password'>, similarityScores?: { cosine: number, jaccard: number, euclidean: number }, mainScore?: number })[])
         .map(project => {
-            const similarity = calculateCosineSimilarity(userSkills, project.techStack);
-
+            const cosine = calculateCosineSimilarity(userSkills, project.techStack);
+            const jaccard = calculateJaccardSimilarity(userSkills, project.techStack);
+            const euclidean = calculateEuclideanSimilarity(userSkills, project.techStack); // 💡 [추가] 유클리드 계산
+            
             return {
                 ...project,
-                recommendationScore: similarity, 
+                similarityScores: { cosine, jaccard, euclidean }, // 💡 [수정] 유클리드 포함
+                mainScore: cosine, // 기본 정렬 기준은 코사인으로 유지
             };
         })
-        // 2. 점수가 0보다 큰 프로젝트만 필터링 (최소 적합도 5% 이상)
-        .filter(p => p.recommendationScore && p.recommendationScore > 0.05) 
-        // 3. 점수가 높은 순으로 정렬
-        .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0)); 
+        // 메인 점수(코사인)가 5% 이상인 프로젝트만 필터링
+        .filter(p => p.mainScore && p.mainScore > 0.05) 
+        // 메인 점수가 높은 순으로 정렬
+        .sort((a, b) => (b.mainScore || 0) - (a.mainScore || 0)); 
     
     logger.info(`[Recommendation] Generated ${recommendations.length} project recommendations for user ${userId}.`);
 
