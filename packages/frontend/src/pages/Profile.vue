@@ -55,8 +55,10 @@
         </div>
         <div v-else>
           <textarea v-model="editableBio" placeholder="자기소개를 입력하세요"></textarea>
-          <button @click="saveBio">저장</button>
-          <button @click="cancelEditingBio">취소</button>
+          <button @click="saveBio" :disabled="isSavingBio">
+            {{ isSavingBio ? '저장 중 (AI 분석 중)...' : '저장' }}
+          </button>
+          <button @click="cancelEditingBio" :disabled="isSavingBio">취소</button>
         </div>
       </div>
     </div>
@@ -81,6 +83,7 @@ const editableStatus = ref('');
 
 const isEditingBio = ref(false);
 const editableBio = ref('');
+const isSavingBio = ref(false); // [추가] 자기소개 저장 로딩 상태
 
 const parsedSkills = computed(() => {
   if (!user.value?.extractedSkills) return [];
@@ -173,6 +176,7 @@ const cancelEditingBio = () => {
 };
 
 const saveBio = async () => {
+  isSavingBio.value = true; //  [수정] 저장 시작 시 로딩 상태 활성화
   try {
     const token = localStorage.getItem('token');
     const response = await axios.put('/api/users/me/bio', 
@@ -182,6 +186,8 @@ const saveBio = async () => {
     
     if (user.value) {
         user.value.bio = response.data.bio;
+        // [수정] 백엔드에서 AI 추출한 extractedSkills도 함께 응답받아 업데이트
+        user.value.extractedSkills = response.data.extractedSkills; 
     }
 
     isEditingBio.value = false;
@@ -189,6 +195,8 @@ const saveBio = async () => {
   } catch (error) {
     console.error('자기소개 업데이트 실패:', error);
     alert('자기소개 업데이트에 실패했습니다.');
+  } finally {
+    isSavingBio.value = false; //  [수정] 저장 완료/실패 시 로딩 상태 비활성화
   }
 };
 
