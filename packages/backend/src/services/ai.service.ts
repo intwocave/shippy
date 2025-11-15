@@ -60,7 +60,7 @@ export const generateText = async (prompt: string): Promise<string> => {
 
 // [추가] 자기소개에서 기술 스택 및 숙련도 추출
 export const extractSkillsFromBio = async (bio: string): Promise<string> => {
-  const prompt = `다음 자기소개 텍스트에서 사용자가 언급한 기술 스택과 숙련도(1.0~5.0 사이의 float 값)를 추출하여 JSON 문자열 형태로만 반환해줘. 기술 스택은 소문자로 변환하고, 숙련도는 해당 기술에 대한 자신감이나 경험을 바탕으로 추정해줘. 결과는 반드시 JSON 객체 형태여야 해.
+  const prompt = `다음 자기소개 텍스트에서 사용자가 언급한 기술 스택과 숙련도(1.0~5.0 사이의 float 값)를 추출하여 JSON 문자열 형태로만 반환해줘. 기술 스택은 소문자로 변환하고, 숙련도는 해당 기술에 대한 자신감이나 경험을 바탕으로 추정해줘. 결과는 반드시 JSON 객체 형태여야 해. 마크다운 없이 작성해 줘.
 
 예시 1: "저는 Python을 5년 동안 사용하여 데이터 분석과 AI 모델링을 주로 했습니다. React는 입문 단계입니다."
 결과: {"python": 5.0, "data_analysis": 4.5, "ai_modeling": 4.5, "react": 2.0}
