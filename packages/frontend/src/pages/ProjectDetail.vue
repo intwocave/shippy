@@ -86,7 +86,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+// 🚨 수정: 'watch'를 import 목록에 추가합니다.
+import { ref, onMounted, computed, watch } from 'vue'; 
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
@@ -96,8 +97,8 @@ const route = useRoute();
 const router = useRouter();
 const project = ref(null);
 const applicants = ref([]);
-const recommendedUsers = ref([]); // 👈 [추가] 추천 유저 목록 상태
-const isLoadingRecommendations = ref(false); // 👈 [추가] 로딩 상태
+const recommendedUsers = ref([]); 
+const isLoadingRecommendations = ref(false); 
 const isApplying = ref(false);
 const newComment = ref('');
 
@@ -116,12 +117,6 @@ const fetchProject = async () => {
     
     const response = await axios.get(`/api/projects/${projectId}`, { headers });
     project.value = response.data;
-
-    // isOwner.value가 fetchProject가 끝난 후에도 즉시 정확하게 계산되므로, 
-    // watch를 사용하지 않고도 아래 로직으로 지원자 목록을 가져올 수 있습니다. (기존 로직)
-    // if (isOwner.value) {
-    //   fetchApplicants();
-    // }
   } catch (error) {
     console.error('프로젝트 조회 실패:', error);
     alert('프로젝트를 불러오는 데 실패했습니다.');
@@ -140,13 +135,12 @@ const fetchApplicants = async () => {
   }
 };
 
-const fetchRecommendedUsers = async () => { // 👈 [추가] 추천 유저 조회 함수
+const fetchRecommendedUsers = async () => { 
   if (!isOwner.value) return; 
 
   isLoadingRecommendations.value = true;
   try {
     const token = localStorage.getItem('token');
-    // 백엔드에서 새로 추가할 엔드포인트 호출
     const response = await axios.get(`/api/projects/${projectId}/recommended-users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -169,7 +163,6 @@ const handleApply = async () => {
     });
 
     alert('성공적으로 지원했습니다.');
-    // 지원 상태를 즉시 반영하기 위해 프로젝트 정보를 다시 불러옵니다.
     fetchProject();
 
   } catch (error) {
@@ -225,12 +218,11 @@ onMounted(() => {
   fetchComments();
 });
 
-// isOwner 값이 확정되면 (user 정보 로딩 후) 지원자와 추천 유저 목록을 불러옵니다.
-// fetchProject가 비동기이므로, 이 watch가 isOwner의 변경 사항을 추적하는 것이 더 안전합니다.
+// watch를 사용하여 isOwner의 변경을 감지하고, true가 되면 데이터 로드
 watch(isOwner, (newValue) => {
     if (newValue) {
         fetchApplicants();
-        fetchRecommendedUsers(); // 👈 [추가] 오너일 때 추천 유저 로드
+        fetchRecommendedUsers(); 
     }
 }, { immediate: true });
 </script>
