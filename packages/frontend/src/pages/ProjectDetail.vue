@@ -16,7 +16,6 @@
       <p>{{ project.members }}</p>
     </div>
 
-    <!-- 지원하기 버튼 -->
     <div class="apply-section" v-if="isAuthenticated">
       <button @click="handleApply" :disabled="project.hasApplied || isApplying" class="apply-btn">
         <span v-if="isApplying">지원 중...</span>
@@ -28,7 +27,6 @@
       <p>프로젝트에 지원하려면 <router-link to="/">로그인</router-link>이 필요합니다.</p>
     </div>
 
-    <!-- Applicants Section (for project owner) -->
     <div v-if="isOwner && applicants.length > 0" class="applicants-section">
       <h3>지원자 목록</h3>
       <ul>
@@ -39,7 +37,17 @@
       </ul>
     </div>
 
-    <!-- 댓글 섹션 -->
+    <div v-if="isOwner" class="recommendations-section">
+      <h3>프로젝트 맞춤 추천 유저</h3>
+      <p v-if="isLoadingRecommendations">추천 유저 목록을 불러오는 중...</p>
+      <ul v-else-if="recommendedUsers.length > 0">
+        <li v-for="user in recommendedUsers" :key="user.id">
+          <router-link :to="`/users/${user.id}`">{{ user.name }}</router-link>
+        </li>
+      </ul>
+      <p v-else>아직 추천할 유저가 없습니다.</p>
+    </div>
+
     <div class="comments-section">
       <h3>댓글</h3>
       <div v-if="isAuthenticated">
@@ -78,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useAuth } from '../composables/useAuth';
@@ -88,6 +96,8 @@ const route = useRoute();
 const router = useRouter();
 const project = ref(null);
 const applicants = ref([]);
+const recommendedUsers = ref([]); // 👈 [추가] 추천 유저 목록 상태
+const isLoadingRecommendations = ref(false); // 👈 [추가] 로딩 상태
 const isApplying = ref(false);
 const newComment = ref('');
 
@@ -107,9 +117,11 @@ const fetchProject = async () => {
     const response = await axios.get(`/api/projects/${projectId}`, { headers });
     project.value = response.data;
 
-    if (isOwner.value) {
-      fetchApplicants();
-    }
+    // isOwner.value가 fetchProject가 끝난 후에도 즉시 정확하게 계산되므로, 
+    // watch를 사용하지 않고도 아래 로직으로 지원자 목록을 가져올 수 있습니다. (기존 로직)
+    // if (isOwner.value) {
+    //   fetchApplicants();
+    // }
   } catch (error) {
     console.error('프로젝트 조회 실패:', error);
     alert('프로젝트를 불러오는 데 실패했습니다.');
@@ -127,6 +139,25 @@ const fetchApplicants = async () => {
     console.error('지원자 목록 조회 실패:', error);
   }
 };
+
+const fetchRecommendedUsers = async () => { // 👈 [추가] 추천 유저 조회 함수
+  if (!isOwner.value) return; 
+
+  isLoadingRecommendations.value = true;
+  try {
+    const token = localStorage.getItem('token');
+    // 백엔드에서 새로 추가할 엔드포인트 호출
+    const response = await axios.get(`/api/projects/${projectId}/recommended-users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    recommendedUsers.value = response.data;
+  } catch (error) {
+    console.error('추천 유저 목록 조회 실패:', error);
+  } finally {
+    isLoadingRecommendations.value = false;
+  }
+};
+
 
 const handleApply = async () => {
   isApplying.value = true;
@@ -193,6 +224,15 @@ onMounted(() => {
   fetchProject();
   fetchComments();
 });
+
+// isOwner 값이 확정되면 (user 정보 로딩 후) 지원자와 추천 유저 목록을 불러옵니다.
+// fetchProject가 비동기이므로, 이 watch가 isOwner의 변경 사항을 추적하는 것이 더 안전합니다.
+watch(isOwner, (newValue) => {
+    if (newValue) {
+        fetchApplicants();
+        fetchRecommendedUsers(); // 👈 [추가] 오너일 때 추천 유저 로드
+    }
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -347,5 +387,22 @@ onMounted(() => {
 
 .comment-edit-form button:last-of-type {
   background-color: #6c757d; /* Cancel button - grey */
+}
+
+/* [추가] 추천 유저 섹션 스타일 */
+.recommendations-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.recommendations-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.recommendations-section li {
+  padding: 0.5rem 0;
+  border-bottom: 1px dotted #eee;
 }
 </style>

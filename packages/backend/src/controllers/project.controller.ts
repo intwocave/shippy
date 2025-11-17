@@ -115,3 +115,17 @@ export const getProjectApplicants = async (req: Request, res: Response, next: Ne
     next(error);
   }
 };
+
+/**
+ * 프로젝트에 적합한 추천 사용자 목록 조회
+ */
+export const getRecommendedUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const projectId = Number(req.params.id);
+    // 추천 로직을 담은 서비스 함수 호출 (미리 구현해야 함)
+    const recommendedUsers = await projectService.getRecommendedUsersForProject(projectId); 
+    res.status(httpStatus.OK).json(recommendedUsers);
+  } catch (error) {
+    next(error);
+  }
+};

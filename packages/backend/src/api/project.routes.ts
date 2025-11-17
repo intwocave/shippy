@@ -39,6 +39,9 @@ router.get('/:id/applications', ensureAuthenticated, projectController.getProjec
 router.get('/:projectId/messages', ensureAuthenticated, chatController.getMessages);
 
 // [추가] 공유 노트 조회 라우트
-router.get('/:projectId/note', ensureAuthenticated, sharedNoteController.getNote); // 👈 [추가]
+router.get('/:projectId/note', ensureAuthenticated, sharedNoteController.getNote); 
+
+// [추가] 프로젝트에 적합한 추천 유저 목록 조회
+router.get('/:id/recommended-users', ensureAuthenticated, projectController.getRecommendedUsers); // 👈 이 라우트와 컨트롤러를 추가해야 합니다.
 
 export default router;

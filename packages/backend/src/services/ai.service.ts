@@ -72,5 +72,25 @@ export const extractSkillsFromBio = async (bio: string): Promise<string> => {
 자기소개: "${bio}"
 결과:
 `;
-  return generateText(prompt);
+  const rawResponse = await generateText(prompt);
+
+  // --- 강력한 JSON 추출 로직 ---
+  // 1. 문자열 내에서 첫 번째 '{'와 마지막 '}'의 인덱스를 찾습니다.
+  const start = rawResponse.indexOf('{');
+  const end = rawResponse.lastIndexOf('}');
+
+  if (start !== -1 && end !== -1 && start < end) {
+    // 중괄호로 감싸진 순수 JSON 문자열만 추출하고, trim()으로 앞뒤 공백을 확실하게 제거합니다.
+    return rawResponse.substring(start, end + 1).trim();
+  }
+  
+  // 2. 1단계 추출이 실패한 경우 (JSON 형식이 심하게 깨진 경우)
+  // 최대한 마크다운 기호를 제거해봅니다.
+  let cleanedResponse = rawResponse.replace(/^\s*```(json)?\s*/i, ''); 
+  cleanedResponse = cleanedResponse.replace(/\s*```\s*$/, ''); 
+
+  // 추출 실패 시 빈 객체를 반환하지 않고 오류를 발생시켜 상위 로직에서 오류를 처리하게 할 수 있지만,
+  // 여기서는 최대한 클리닝을 시도한 결과를 반환합니다.
+  // 이 결과도 유효한 JSON이 아닐 경우, 호출하는 곳(`user.service.ts`의 `JSON.parse`)에서 최종 오류가 발생합니다.
+  return cleanedResponse.trim();
 }
