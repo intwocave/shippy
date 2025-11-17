@@ -17,7 +17,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div style="margin-top: 80px;">
+  <div style="margin-top: 50px;">
     <!-- Hero -->
     <section class="hero-section">
       <h1 class="hero-title">SHIPPY</h1>
@@ -39,7 +39,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- 카테고리 -->
+<!--
     <section class="categories-section">
       <div class="container">
         <h2 class="section-title">카테고리</h2>
@@ -50,6 +50,6 @@ onMounted(async () => {
           <CategoryCard title="게임 개발" description="Unity, Unreal Engine" />
         </div>
       </div>
-    </section>
+    </section> -->
   </div>
 </template>

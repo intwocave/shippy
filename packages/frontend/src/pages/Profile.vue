@@ -270,8 +270,9 @@ h1 {
 }
 
 textarea {
-  height: 100px; /* 높이 조절 */
-  resize: vertical; /* 수직으로만 크기 조절 가능 */
+  width: 150%; /* 기존 너비를 유지하면서, 아래에서 최대 너비 설정 */ 
+  max-width: 400px;
+  height: 200px; /* 높이 조절 */
 }
 
 

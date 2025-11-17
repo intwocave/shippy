@@ -894,7 +894,7 @@ onUnmounted(() => {
 /* 디스코드 레이아웃 스타일 */
 .team-room-layout {
   display: flex;
-  height: calc(100vh - 80px); /* 화면 높이 - Navbar 높이 */
+  height: calc(100vh - 130px); /* 화면 높이 - Navbar 높이 */
   padding-top: 0px;
   background-color: #f0f4f8; /* 배경색 */
   color: #333;
