@@ -1,13 +1,13 @@
 import { Server, Socket } from 'socket.io';
 
-// 방마다 어떤 유저(소켓 ID)들이 있는지 기록
-const rooms: Record<string, string[]> = {};
+// 방마다 어떤 유저(소켓 ID와 사용자 정보)들이 있는지 기록
+const rooms: Record<string, { sid: string, user: any }[]> = {};
 
 export default (io: Server, socket: Socket) => {
 
   // 유저가 특정 방에 WebRTC 참가를 요청
-  socket.on('webrtc:join', (payload: { roomId: string }) => {
-    const { roomId } = payload;
+  socket.on('webrtc:join', (payload: { roomId: string, user: any }) => {
+    const { roomId, user } = payload;
     
     // 기존 방 참여자 목록 가져오기
     const otherUsers = rooms[roomId] || [];
@@ -19,11 +19,11 @@ export default (io: Server, socket: Socket) => {
     if (!rooms[roomId]) {
       rooms[roomId] = [];
     }
-    rooms[roomId].push(socket.id);
+    rooms[roomId].push({ sid: socket.id, user });
 
     // 기존 참여자들에게 새로운 참여자 알림
-    otherUsers.forEach(userId => {
-      io.to(userId).emit('webrtc:user-joined', { sid: socket.id });
+    otherUsers.forEach(userData => {
+      io.to(userData.sid).emit('webrtc:user-joined', { sid: socket.id, user });
     });
 
     // 방에 입장했음을 socket에 join하여 그룹화
@@ -48,7 +48,7 @@ export default (io: Server, socket: Socket) => {
   // 유저가 방을 나갈 때
   const handleLeave = (roomId: string) => {
     if (rooms[roomId]) {
-      rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
+      rooms[roomId] = rooms[roomId].filter(userData => userData.sid !== socket.id);
       // 방에 남아있는 다른 유저들에게 내가 나갔다고 알림
       socket.to(roomId).emit('webrtc:user-left', { sid: socket.id });
     }

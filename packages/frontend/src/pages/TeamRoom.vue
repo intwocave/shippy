@@ -96,7 +96,7 @@
                     </div>
                     <div v-for="(stream, sid) in remoteStreams" :key="sid" class="remote-video-container">
                         <video :ref="el => { if (el) remoteVideoRefs[sid] = el as HTMLVideoElement }" autoplay playsinline class="remote-video"></video>
-                        <p class="video-label">참가자 {{ sid.slice(0, 4) }}</p>
+                        <p class="video-label">{{ remoteUsers[sid]?.name || '참가자' }}</p>
                     </div>
                 </div>
                 
@@ -193,6 +193,7 @@ let userStream: MediaStream | null = null; // 사용자 카메라/마이크 스�
 const peerConnections = ref<Record<string, RTCPeerConnection>>({});
 const remoteStreams = ref<Record<string, MediaStream>>({});
 const remoteVideoRefs = ref<Record<string, HTMLVideoElement | null>>({});
+const remoteUsers = ref<Record<string, any>>({}); // sid를 키로 사용자 정보 저장
 const iceServers = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -507,6 +508,7 @@ const stopWebRTC = () => {
   }
   remoteStreams.value = {};
   remoteVideoRefs.value = {};
+  remoteUsers.value = {};
 
   // 서버에 방 나감을 알림
   if (selectedProjectId.value && socket.connected) {
@@ -609,7 +611,7 @@ const startWebRTC = async () => {
         isWebRTCConnecting.value = false;
 
         console.log('[WebRTC] 서버에 join을 요청합니다.');
-        socket.emit('webrtc:join', { roomId: String(selectedProjectId.value) });
+        socket.emit('webrtc:join', { roomId: String(selectedProjectId.value), user: user.value });
 
     } catch (error) {
         console.error('❌ 미디어 접근 실패:', error);
@@ -734,17 +736,19 @@ const setupAudioVisualizer = () => {
 // --- WebRTC 소켓 핸들러 등록 ---
 const registerWebRTCHandlers = () => { 
 
-    socket.on('webrtc:all-users', (payload: { users: string[] }) => {
+    socket.on('webrtc:all-users', (payload: { users: { sid: string, user: any }[] }) => {
         if (!isWebRTCActive.value) return;
         console.log('[WebRTC] 기존 사용자 목록 수신:', payload.users);
-        payload.users.forEach(sid => {
-            createPeerConnection(sid, true);
+        payload.users.forEach(data => {
+            remoteUsers.value[data.sid] = data.user;
+            createPeerConnection(data.sid, true);
         });
     });
 
-    socket.on('webrtc:user-joined', (payload: { sid: string }) => {
+    socket.on('webrtc:user-joined', (payload: { sid: string, user: any }) => {
         if (!isWebRTCActive.value) return;
         console.log(`[WebRTC] 새로운 사용자(${payload.sid}) 참가`);
+        remoteUsers.value[payload.sid] = payload.user;
         createPeerConnection(payload.sid, false);
     });
 
@@ -756,6 +760,9 @@ const registerWebRTCHandlers = () => {
         }
         if (remoteStreams.value[payload.sid]) {
             delete remoteStreams.value[payload.sid];
+        }
+        if (remoteUsers.value[payload.sid]) {
+            delete remoteUsers.value[payload.sid];
         }
     });
     
