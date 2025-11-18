@@ -8,15 +8,26 @@ export default (io: Server, socket: Socket) => {
   // 유저가 특정 방에 WebRTC 참가를 요청
   socket.on('webrtc:join', (payload: { roomId: string }) => {
     const { roomId } = payload;
+    
+    // 기존 방 참여자 목록 가져오기
+    const otherUsers = rooms[roomId] || [];
+    
+    // 새로운 참여자에게 기존 참여자 목록 전송
+    socket.emit('webrtc:all-users', { users: otherUsers });
+
+    // 새로운 참여자를 방에 추가
     if (!rooms[roomId]) {
       rooms[roomId] = [];
     }
-    // 다른 유저들에게 새로운 유저가 들어왔다고 알림
-    const otherUsers = rooms[roomId];
-    if (otherUsers) {
-      socket.emit('webrtc:all-users', { users: otherUsers });
-    }
     rooms[roomId].push(socket.id);
+
+    // 기존 참여자들에게 새로운 참여자 알림
+    otherUsers.forEach(userId => {
+      io.to(userId).emit('webrtc:user-joined', { sid: socket.id });
+    });
+
+    // 방에 입장했음을 socket에 join하여 그룹화
+    socket.join(roomId);
   });
 
   // Offer를 특정 대상에게 전달
