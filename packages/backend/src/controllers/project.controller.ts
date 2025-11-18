@@ -129,3 +129,16 @@ export const getRecommendedUsers = async (req: Request, res: Response, next: Nex
     next(error);
   }
 };
+
+/**
+ * 프로젝트 멤버 조회
+ */
+export const getProjectMembers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const projectId = Number(req.params.id);
+    const members = await projectService.getProjectMembers(projectId);
+    res.status(httpStatus.OK).json(members);
+  } catch (error) {
+    next(error);
+  }
+};

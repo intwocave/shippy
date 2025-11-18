@@ -79,7 +79,7 @@ const handleLogout = () => {
           <router-link to="/my-applications" class="nav-link my-applications-link">내 지원 목록</router-link>
           <router-link to="/profile" class="nav-link my-profile-link">
             내 프로필
-            <span v-if="user" :class="['status-indicator', user.status]"></span>
+            <!-- <span v-if="user" :class="['status-indicator', user.status]"></span> -->
           </router-link>
           <button class="btn-logout" @click="handleLogout">로그아웃</button>
         </template>

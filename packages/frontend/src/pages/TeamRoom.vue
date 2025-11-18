@@ -117,6 +117,17 @@
       </div>
     </div>
 
+    <div class="members-sidebar">
+      <h2>팀원 목록</h2>
+      <ul v-if="teamMembers.length > 0" class="member-list">
+        <li v-for="member in teamMembers" :key="member.id" class="member-item">
+          <span :class="['online-status', { 'online': onlineUserIds.includes(member.id) }]">●</span>
+          <span class="member-name">{{ member.name }}</span>
+        </li>
+      </ul>
+      <p v-else class="status">팀원을 불러오는 중...</p>
+    </div>
+
   </div>
 </template>
 
@@ -141,6 +152,12 @@ interface ChatMessage {
   tempId?: string;
 }
 
+interface TeamMember {
+  id: string;
+  name: string;
+  // 필요한 경우 다른 속성 추가
+}
+
 // --- 상태 관리 ---
 const { user, isAuthenticated } = useAuth();
 
@@ -152,6 +169,9 @@ const messages = ref<ChatMessage[]>([]);
 const inputMessage = ref('');
 let socket: Socket;
 const messageListRef = ref<HTMLDivElement | null>(null);
+
+const teamMembers = ref<TeamMember[]>([]);
+const onlineUserIds = ref<string[]>([]);
 
 // 탭 상태
 const activeTab = ref<'chat' | 'note' | 'video'>('chat'); 
@@ -239,6 +259,19 @@ const fetchTeams = async () => {
   }
 };
 
+const fetchTeamMembers = async (projectId: number) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`/api/projects/${projectId}/members`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    teamMembers.value = response.data;
+  } catch (error) {
+    console.error('팀 멤버 조회 실패:', error);
+    teamMembers.value = [];
+  }
+};
+
 const fetchNote = async (projectId: number) => {
     isNoteLoading.value = true;
     try {
@@ -289,6 +322,7 @@ const selectTeam = (projectId: number) => {
 
         fetchMessages(projectId);
         fetchNote(projectId); 
+        fetchTeamMembers(projectId);
         joinRooms(projectId);
     }
 };
@@ -839,6 +873,9 @@ const initializeSocket = () => {
 
   socket.on('connect', () => {
     console.log('Socket.IO 연결 성공!');
+    if (user.value) {
+      socket.emit('user:online', user.value.id);
+    }
     if (selectedProjectId.value) {
         joinRooms(selectedProjectId.value);
     }
@@ -864,6 +901,10 @@ const initializeSocket = () => {
     scrollToBottom();
   });
 
+  socket.on('user:online-list', (userIds: string[]) => {
+    onlineUserIds.value = userIds;
+  });
+
   // 노트 내용 실시간 업데이트 수신
   socket.on('note:content', (payload: { roomId: string; content: string }) => {
     if (payload.roomId === String(selectedProjectId.value)) {
@@ -885,6 +926,9 @@ onMounted(() => {
 onUnmounted(() => { 
     stopWebRTC();
     if (socket) {
+      if (user.value) {
+        socket.emit('user:offline', user.value.id);
+      }
       socket.disconnect();
     }
 })
@@ -954,6 +998,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  min-width: 0;
 }
 
 .chat-placeholder {
@@ -1326,5 +1371,62 @@ onUnmounted(() => {
 
 .control-buttons button:hover {
     filter: brightness(1.2);
+}
+
+/* 멤버 사이드바 스타일 */
+.members-sidebar {
+  width: 220px;
+  background-color: #e2e8f0;
+  padding: 15px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  border-left: 1px solid #d1d9e2;
+}
+
+.members-sidebar h2 {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #1a1a1a;
+  border-bottom: 1px solid #c0c0c0;
+  padding-bottom: 10px;
+}
+
+.member-list {
+  list-style: none;
+  padding: 0;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.member-item:hover {
+  background-color: #d1d9e2;
+}
+
+.online-status {
+  font-size: 1.2rem;
+  margin-right: 10px;
+  color: #9e9e9e; /* 오프라인 기본 색상 */
+}
+
+.online-status.online {
+  color: #28a745; /* 온라인 색상 */
+}
+
+.member-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.status {
+  color: #666;
+  text-align: center;
+  margin-top: 20px;
 }
 </style>

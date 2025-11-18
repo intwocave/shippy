@@ -44,4 +44,7 @@ router.get('/:projectId/note', ensureAuthenticated, sharedNoteController.getNote
 // [추가] 프로젝트에 적합한 추천 유저 목록 조회
 router.get('/:id/recommended-users', ensureAuthenticated, projectController.getRecommendedUsers); // 👈 이 라우트와 컨트롤러를 추가해야 합니다.
 
+// [추가] 프로젝트 멤버 조회
+router.get('/:id/members', ensureAuthenticated, projectController.getProjectMembers);
+
 export default router;

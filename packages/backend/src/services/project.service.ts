@@ -139,3 +139,37 @@ export const getRecommendedUsersForProject = async (projectId: number): Promise<
   console.log(`Calculating recommendations for project ${projectId}`);
   return prisma.user.findMany({ select: { id: true, email: true } });
 };
+
+/**
+ * 프로젝트 멤버 목록을 조회합니다.
+ * @param {number} projectId - 프로젝트 ID
+ */
+export const getProjectMembers = async (projectId: number) => {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      owner: true,
+      applications: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  });
+
+  if (!project) {
+    throw new ApiError(httpStatus.NOT_FOUND, '프로젝트를 찾을 수 없습니다.');
+  }
+
+  const owner = project.owner;
+  const applicants = project.applications.map(app => app.user);
+
+  // Combine owner and applicants, ensuring no duplicates
+  const members = [owner, ...applicants];
+  const uniqueMembers = members.filter(
+    (member, index, self) => index === self.findIndex((m) => m.id === member.id)
+  );
+
+  // 필요없는 비밀번호 정보는 제거하고 반환
+  return uniqueMembers.map(({ password, ...member }) => member);
+};

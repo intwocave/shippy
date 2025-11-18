@@ -22,6 +22,7 @@
           <button @click="cancelEditing">취소</button>
         </div>
       </div>
+      <!--
       <div class="profile-item">
         <label>상태:</label>
         <div v-if="!isEditingStatus">
@@ -38,6 +39,7 @@
           <button @click="cancelEditingStatus">취소</button>
         </div>
       </div>
+      -->
       <div class="profile-item skill-item">
         <label>기술 스택 (AI 추출):</label>
         <div v-if="parsedSkills.length > 0" class="skill-list">
@@ -78,8 +80,8 @@ const { user } = useAuth();
 const isEditing = ref(false);
 const editablePersonality = ref('');
 
-const isEditingStatus = ref(false);
-const editableStatus = ref('');
+// const isEditingStatus = ref(false);
+// const editableStatus = ref('');
 
 const isEditingBio = ref(false);
 const editableBio = ref('');
@@ -103,7 +105,7 @@ const parsedSkills = computed(() => {
 watch(user, (newUser) => {
   if (newUser) {
     editablePersonality.value = newUser.personality || '';
-    editableStatus.value = newUser.status || '오프라인';
+    // editableStatus.value = newUser.status || '오프라인';
     editableBio.value = newUser.bio || '';
   }
 }, { immediate: true });
@@ -137,34 +139,34 @@ const savePersonality = async () => {
   }
 };
 
-const startEditingStatus = () => {
-  isEditingStatus.value = true;
-};
+// const startEditingStatus = () => {
+//   isEditingStatus.value = true;
+// };
 
-const cancelEditingStatus = () => {
-  isEditingStatus.value = false;
-  editableStatus.value = user.value.status || '오프라인';
-};
+// const cancelEditingStatus = () => {
+//   isEditingStatus.value = false;
+//   editableStatus.value = user.value.status || '오프라인';
+// };
 
-const saveStatus = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await axios.put('/api/users/me/status', 
-      { status: editableStatus.value }, 
-      { headers: { Authorization: `Bearer ${token}` } 
-    });
+// const saveStatus = async () => {
+//   try {
+//     const token = localStorage.getItem('token');
+//     const response = await axios.put('/api/users/me/status', 
+//       { status: editableStatus.value }, 
+//       { headers: { Authorization: `Bearer ${token}` } 
+//     });
     
-    if (user.value) {
-        user.value.status = response.data.status;
-    }
+//     if (user.value) {
+//         user.value.status = response.data.status;
+//     }
 
-    isEditingStatus.value = false;
-    alert('상태가 성공적으로 업데이트되었습니다.');
-  } catch (error) {
-    console.error('상태 업데이트 실패:', error);
-    alert('상태 업데이트에 실패했습니다.');
-  }
-};
+//     isEditingStatus.value = false;
+//     alert('상태가 성공적으로 업데이트되었습니다.');
+//   } catch (error) {
+//     console.error('상태 업데이트 실패:', error);
+//     alert('상태 업데이트에 실패했습니다.');
+//   }
+// };
 
 const startEditingBio = () => {
   isEditingBio.value = true;
