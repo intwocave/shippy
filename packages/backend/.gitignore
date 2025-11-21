@@ -3,3 +3,4 @@
 # Keep environment variables out of version control
 # The root .gitignore already handles .env, but this is for clarity.
 .env
+/dist
