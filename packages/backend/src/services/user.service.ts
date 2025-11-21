@@ -47,6 +47,8 @@ export const getAppliedProjectsByUserId = async (userId: number): Promise<(Appli
               name: true,
               personality: true,
               status: true,
+              bio: true,
+              extractedSkills: true,
             }
           }
         }
@@ -154,9 +156,9 @@ function calculateCosineSimilarity(userSkills: Record<string, number>, projectSt
 function calculateJaccardSimilarity(userSkills: Record<string, number>, projectStack: string[]): number {
     // 숙련도가 1.0 이상인 기술만 '아는 기술'로 인정
     const userKnownSkills = new Set(
-        Object.keys(userSkills)
-            .filter(skill => userSkills[skill] >= 1.0) 
-            .map(s => s.toLowerCase())
+        Object.entries(userSkills)
+            .filter(([, value]) => value >= 1.0)
+            .map(([key]) => key.toLowerCase())
     );
     const requiredSkills = new Set(projectStack.map(s => s.toLowerCase()));
 

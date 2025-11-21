@@ -1,6 +1,4 @@
-// packages/backend/src/services/ai.service.ts (전체 코드)
-
-import axios from 'axios';
+import axios/*, { AxiosError } */ from 'axios';
 import config from '../config/index.js';
 import logger from '../utils/logger.js';
 
@@ -20,7 +18,15 @@ export const generateText = async (prompt: string): Promise<string> => {
 
   try {
     logger.info(`Sending prompt to LLM: ${prompt.substring(0, 200)}...`);
-    const response = await axios.post(
+    const response: {
+      data: {
+        choices: Array<{
+          message: {
+            content: string;
+          };
+        }>;
+      };
+    } = await axios.post(
       llmApiUrl,
       {
         model: llmModel,
@@ -34,8 +40,9 @@ export const generateText = async (prompt: string): Promise<string> => {
       }
     );
 
-    if (response.data.choices && response.data.choices.length > 0) {
-      const content = response.data.choices[0].message.content;
+    const content = response.data?.choices?.[0]?.message?.content;
+
+    if (content) {
       console.log('LLM Response Content:', content);
 
       logger.info('Received response from LLM.');
@@ -44,7 +51,7 @@ export const generateText = async (prompt: string): Promise<string> => {
 
     throw new Error('Invalid response structure from LLM API.');
   } catch (error) {
-    if (axios.isAxiosError(error)) {
+    /* if (error instanceof AxiosError) {
       logger.error('Axios error calling LLM API:', {
         message: error.message,
         url: error.config?.url,
@@ -52,7 +59,7 @@ export const generateText = async (prompt: string): Promise<string> => {
       });
     } else {
       logger.error('Unknown error calling LLM API:', error);
-    }
+    } */
     throw new Error('Failed to get response from LLM.');
   }
 };
