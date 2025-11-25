@@ -1,8 +1,19 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
+interface Comment {
+  id: number;
+  content: string;
+  author: {
+    id: number;
+    username: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
+}
+
 export function useComments(projectId: number) {
-  const comments = ref([]);
+  const comments = ref<Comment[]>([]);
 
   const fetchComments = async () => {
     const response = await axios.get(`/api/projects/${projectId}/comments`);

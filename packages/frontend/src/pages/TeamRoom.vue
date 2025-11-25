@@ -94,7 +94,7 @@
                         <video ref="localVideoRef" autoplay muted playsinline class="local-video"></video>
                         <p class="video-label">나</p>
                     </div>
-                    <div v-for="(stream, sid) in remoteStreams" :key="sid" class="remote-video-container">
+                    <div v-for="(_, sid) in remoteStreams" :key="sid" class="remote-video-container">
                         <video :ref="el => { if (el) remoteVideoRefs[sid] = el as HTMLVideoElement }" autoplay playsinline class="remote-video"></video>
                         <p class="video-label">{{ remoteUsers[sid]?.name || '참가자' }}</p>
                     </div>
@@ -185,7 +185,6 @@ const showPreview = ref(false);
 
 // WebRTC 관련 상태
 const localVideoRef = ref<HTMLVideoElement | null>(null);
-const remoteVideoRef = ref<HTMLVideoElement | null>(null); 
 const isWebRTCActive = ref(false);
 const isWebRTCConnecting = ref(false);
 let localStream: MediaStream | null = null;

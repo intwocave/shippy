@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import ProjectCard from '../components/ProjectCard.vue'
-import CategoryCard from '../components/CategoryCard.vue'
+// import CategoryCard from '../components/CategoryCard.vue'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-const popularProjects = ref([])
+interface Project {
+  id: number;
+  title: string;
+  description: string;
+  techStack: string[];
+  members: string;
+  deadline: string;
+}
+
+const popularProjects = ref<Project[]>([])
 
 onMounted(async () => {
   try {

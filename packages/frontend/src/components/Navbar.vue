@@ -10,7 +10,7 @@ const showLoginModal = ref(false)
 const showSignupModal = ref(false)
 
 // Use auth composable
-const { isAuthenticated, user, clearAuth } = useAuth()
+const { isAuthenticated/* , user */, clearAuth } = useAuth()
 
 // Open/close/switch modals
 const openLoginModal = () => {
