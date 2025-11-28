@@ -18,7 +18,7 @@ const broadcastOnlineUsers = (io: Server) => {
 export const initializeSocket = (server: http.Server) => {
   const io = new Server(server, {
     cors: {
-      origin: 'http://localhost:5173',
+      origin: true/* 'http://localhost:5173' */,
       methods: ['GET', 'POST'],
     },
   });
