@@ -193,12 +193,21 @@ const peerConnections = ref<Record<string, RTCPeerConnection>>({});
 const remoteStreams = ref<Record<string, MediaStream>>({});
 const remoteVideoRefs = ref<Record<string, HTMLVideoElement | null>>({});
 const remoteUsers = ref<Record<string, any>>({}); // sid를 키로 사용자 정보 저장
+
 const iceServers = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-    ],
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ],
 };
+const myTurn = process.env.TURN_URL && process.env.TURN_USERNAME && process.env.TURN_PASSWORD ? {
+    urls: process.env.TURN_URL,
+    username: process.env.TURN_USERNAME,
+    credential: process.env.TURN_PASSWORD,
+} : null;
+if (myTurn) {
+    iceServers.iceServers.push(myTurn);
+}
 // 비디오/오디오 제어 상태
 let audioContext: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
