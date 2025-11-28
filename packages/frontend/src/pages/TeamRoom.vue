@@ -805,7 +805,8 @@ const registerWebRTCHandlers = () => {
 };
 
 const initializeSocket = () => {
-  socket = io('http://localhost:3000');
+  const socketio_url = import.meta.env.VITE_SOCKET_IO_URL || 'http://localhost:3000';
+  socket = io(socketio_url);
 
   socket.on('connect', () => {
     console.log('Socket.IO 연결 성공!');
