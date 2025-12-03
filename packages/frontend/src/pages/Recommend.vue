@@ -81,7 +81,7 @@
 
       <div v-else class="no-recommendations">
         <p>현재 조건에 맞는 추천 프로젝트가 없습니다.</p>
-        <p>프로필의 **자기소개**를 자세히 작성하시면 더 정확한 추천을 받을 수 있습니다.</p>
+        <p>프로필의 <b>자기소개</b>를 자세히 작성하시면 더 정확한 추천을 받을 수 있습니다.</p>
         <router-link to="/profile" class="btn-profile">프로필 작성하기</router-link>
       </div>
     </div>
