@@ -8,6 +8,7 @@
 
       <!-- 이메일 회원가입 폼 -->
       <div v-if="isEmailSignup" class="modal-form email-signup-form">
+        <input v-model="name" type="text" placeholder="이름" required />
         <input v-model="email" type="email" placeholder="이메일" required />
         <input v-model="password" type="password" placeholder="비밀번호" required />
         <input v-model="confirmPassword" type="password" placeholder="비밀번호 확인" required />
@@ -87,6 +88,7 @@ const isLoading = ref(false)
 const isEmailSignup = ref(false)
 
 // 이메일 입력값
+const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -98,12 +100,17 @@ const submitEmailSignup = async () => {
     return
   }
 
+  if (!name.value.trim()) {
+    alert('이름을 입력해주세요.')
+    return
+  }
+
   isLoading.value = true
   try {
     const res = await axios.post('/api/auth/signup', {
       email: email.value,
       password: password.value,
-      name: email.value.split('@')[0],
+      name: name.value,
     })
 
     alert('회원가입 성공!')
@@ -118,13 +125,13 @@ const submitEmailSignup = async () => {
 
 const resetSignupForm = () => {
   isEmailSignup.value = false
+  name.value = ''
   email.value = ''
   password.value = ''
   confirmPassword.value = ''
 }
 
 const closeModal = () => {
-  isEmailSignup.value = false
   emit('close')
 }
 
